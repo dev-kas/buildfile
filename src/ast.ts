@@ -1,39 +1,31 @@
 // Node Types
 
 export type NodeType =
-  // Top-Level Constructs
+  // The Root
   | "Program"
-  | "TaskDeclaration"
-  | "ToolDeclaration"
-  | "VarDeclaration" // Covers 'const' and 'let'
-  | "EnvDeclaration" // Covers 'env'
 
-  // Statements
-  | "BlockStmt" // { ... }
-  | "IfStatement"
-  | "ExpressionStmt" // Wraps standalone calls like rm(...)
+  // Top-Level Declarations
+  | "TaskDeclaration" // task build depends clean { ... }
+  | "VarDeclaration" // const/let/env x = ...
+  | "ToolDeclaration" // tool python { ... }
 
-  // Expressions
-  | "AssignmentExpr"
-  | "MemberExpr" // os.is_windows
-  | "CallExpr" // glob(...)
-  | "BinaryExpr" // Logic inside if statements
+  // The Only Statement Type Allowed
+  | "ExpressionStmt" // Wraps a function call like rm(...)
 
-  // DSL Specifics (Arguments & Structures)
-  | "NamedArgument" // force: true
-  | "SpreadElement" // ...sources
-  | "PlatformMap" // The body of a 'tool'
-  | "PlatformEntry" // windows: "..."
-
-  // Literals
-  | "Property" // Key-value in objects (if needed)
-  | "ObjectLiteral" // { ... }
-  | "ArrayLiteral" // ["-o", ...]
+  // Expressions (Values)
+  | "AssignmentExpr" // x = ...
+  | "BinaryExpr" // 2 + 3, "a" + "b"
+  | "CallExpr" // glob(...), path(...), exec(...)
+  | "ArrayLiteral" // ["-o", "bin"]
+  | "ObjectLiteral" // Used for named args: { force: true }
+  | "Property" // Key-Value pair inside Object/Tool
   | "TemplateLiteral" // "${DIR}/file"
-  | "NumericLiteral"
-  | "StringLiteral"
-  | "BooleanLiteral"
-  | "Identifier";
+
+  // Primitives
+  | "Identifier" // BUILD_DIR
+  | "StringLiteral" // "src"
+  | "NumericLiteral" // 8080
+  | "BooleanLiteral"; // true
 
 // Interfaces
 
@@ -41,120 +33,99 @@ export interface Stmt {
   kind: NodeType;
 }
 
-// Marker interface for things that return values
 export interface Expr extends Stmt {}
 
 export interface Program extends Stmt {
   kind: "Program";
-  body: Stmt[]; // Tasks, Consts, Envs, Tools
-}
-
-// Declarations (Top Level)
-
-// const X = ... | let Y = ...
-export interface VarDeclaration extends Stmt {
-  kind: "VarDeclaration";
-  constant: boolean; // true for 'const', false for 'let'
-  identifier: string;
-  value: Expr;
-}
-
-// env PORT = "8080"
-export interface EnvDeclaration extends Stmt {
-  kind: "EnvDeclaration";
-  identifier: string;
-  value: Expr;
-}
-
-// task name depends [deps] { body }
-export interface TaskDeclaration extends Stmt {
-  kind: "TaskDeclaration";
-  name: string;
-  dependencies: string[]; // e.g. ["clean", "build"]
-  body: BlockStmt;
-}
-
-// tool name { ... }
-export interface ToolDeclaration extends Stmt {
-  kind: "ToolDeclaration";
-  name: string;
-  body: PlatformMap;
-}
-
-// Statements
-
-export interface BlockStmt extends Stmt {
-  kind: "BlockStmt";
   body: Stmt[];
 }
 
-export interface ExpressionStmt extends Stmt {
-  kind: "ExpressionStmt";
-  expression: Expr;
-}
+// Top-Level Declarations
 
-export interface IfStatement extends Stmt {
-  kind: "IfStatement";
-  condition: Expr;
-  consequent: BlockStmt;
-  alternate?: BlockStmt | IfStatement; // Else block or Else If
-}
-
-// Expressions
-
-// exec("cmd", args: [...])
-export interface CallExpr extends Expr {
-  kind: "CallExpr";
-  caller: Expr; // Identifier (e.g. "exec") or MemberExpr
-  // Flux allows: Expressions, Named Args (force: true), and Spreads (...arr)
-  args: (Expr | NamedArgument | SpreadElement)[];
-}
-
-export interface MemberExpr extends Expr {
-  kind: "MemberExpr";
-  object: Expr; // "os"
-  property: string; // "is_windows" (simplified as string for dot notation)
-  computed: boolean; // true if accessed via [ ]
-}
-
-// DSL Specific Helpers
-
-// force: true
-export interface NamedArgument extends Expr {
-  kind: "NamedArgument";
-  name: string;
+// const SRC = "..." | env PORT = "..."
+export interface VarDeclaration extends Stmt {
+  kind: "VarDeclaration";
+  isConst: boolean; // true if prefixed with const
+  isEnv: boolean; // true if 'env', false if 'const/let'
+  identifier: string;
   value: Expr;
 }
 
-// ...sources
-export interface SpreadElement extends Expr {
-  kind: "SpreadElement";
-  argument: Expr;
+// task build depends [clean] { ... }
+export interface TaskDeclaration extends Stmt {
+  kind: "TaskDeclaration";
+  symbol: string; // "build"
+  dependencies: string[]; // ["clean"]
+  body: Expr[]; // A list of CallExprs (commands)
 }
 
-// The body of a 'tool' declaration
-export interface PlatformMap extends Expr {
-  kind: "PlatformMap";
-  entries: PlatformEntry[];
+// tool python { windows: "py.exe", unix: "python3" }
+// This replaces if/else for platform logic
+export interface ToolDeclaration extends Stmt {
+  kind: "ToolDeclaration";
+  symbol: string; // "python"
+  options: Property[]; // The platform mappings
 }
 
-// windows: "python.exe" OR [freebsd, x86]: "..."
-export interface PlatformEntry {
-  kind: "PlatformEntry";
-  keys: string[]; // List of OS/Arch selectors
-  value: Expr; // The command string
+// Logic (Linear Execution)
+
+// x = ...
+export interface AssignmentExpr extends Expr {
+  kind: "AssignmentExpr";
+  assignee: Expr;
+  value: Expr;
 }
 
-// Literals
+// 2 + 3, PORT + 1, name + "-v1"
+export interface BinaryExpr extends Expr {
+  kind: "BinaryExpr";
+  left: Expr;
+  right: Expr;
+  operator: string;
+}
+
+// exec("cmd", { args: [...] })
+export interface CallExpr extends Expr {
+  kind: "CallExpr";
+  caller: string; // The function name (e.g., "exec", "rm", "glob")
+  args: Expr[]; // Positional arguments
+}
+
+// Data Structures
+
+// Used for Named Arguments in calls, or Tool mappings
+// e.g. force: true
+export interface Property extends Stmt {
+  kind: "Property";
+  key: string; // "force", "windows"
+  value: Expr; // true, "python.exe"
+}
+
+// { force: true, recursive: true }
+export interface ObjectLiteral extends Expr {
+  kind: "ObjectLiteral";
+  properties: Property[];
+}
+
+// [ "-o", ... ]
+export interface ArrayLiteral extends Expr {
+  kind: "ArrayLiteral";
+  elements: Expr[];
+}
+
+// Primitives
+
+// "${SRC_DIR}/main.cpp"
+export interface TemplateLiteral extends Expr {
+  kind: "TemplateLiteral";
+  raw: string; // The full string for easy debugging
+  segments: string[]; // ["", "/main.cpp"]
+  variables: string[]; // ["SRC_DIR"] - simplified for DSL
+}
 
 export interface Identifier extends Expr {
   kind: "Identifier";
   symbol: string;
-}
-
-export interface NumericLiteral extends Expr {
-  kind: "NumericLiteral";
-  value: number;
 }
 
 export interface StringLiteral extends Expr {
@@ -162,20 +133,12 @@ export interface StringLiteral extends Expr {
   value: string;
 }
 
+export interface NumericLiteral extends Expr {
+  kind: "NumericLiteral";
+  value: number;
+}
+
 export interface BooleanLiteral extends Expr {
   kind: "BooleanLiteral";
   value: boolean;
-}
-
-// [ "-o", path(...) ]
-export interface ArrayLiteral extends Expr {
-  kind: "ArrayLiteral";
-  elements: (Expr | SpreadElement)[];
-}
-
-// "${SRC_DIR}/**/*.cpp"
-export interface TemplateLiteral extends Expr {
-  kind: "TemplateLiteral";
-  raw: string; // The full raw string
-  expressions: Expr[]; // The interpolated variables
 }

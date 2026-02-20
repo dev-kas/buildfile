@@ -13,3 +13,15 @@ export class SyntaxError extends Error {
     this.name = "SyntaxError";
   }
 }
+
+// for unexpected errors in the engine (not on a user-defined data)
+// if this error is ever thrown (without a catch), there is almost
+// certainly a bug in the engine
+export class EngineError extends Error {
+  constructor(message: string) {
+    super(
+      `Internal EngineError: ${message} (this is a bug in the engine, not user code)`,
+    );
+    this.name = "EngineError";
+  }
+}
