@@ -21,6 +21,7 @@ export enum TokenType {
   ComparisonOperator, // < == > != >= <=
   String, // "..." '...'
   While, // while
+  Else,
   EOF,
 
   // DSL SPECIFIC TOKENS
@@ -29,6 +30,8 @@ export enum TokenType {
   Tool,
   Import,
   Env,
+  Plat,
+  Arch,
 }
 
 const KEYWORDS: Record<string, TokenType> = {
@@ -40,6 +43,9 @@ const KEYWORDS: Record<string, TokenType> = {
   tool: TokenType.Tool,
   import: TokenType.Import,
   env: TokenType.Env,
+  plat: TokenType.Plat,
+  arch: TokenType.Arch,
+  else: TokenType.Else,
 };
 
 export interface Token {

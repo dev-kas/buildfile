@@ -11,12 +11,15 @@ export type NodeType =
 
   // The Only Statement Type Allowed
   | "ExpressionStmt" // Wraps a function call like rm(...)
+  | "PlatformBlock" // platform-specific path
 
   // Expressions (Values)
+  | "NamedArg" // arg: value
   | "AssignmentExpr" // x = ...
   | "BinaryExpr" // 2 + 3, "a" + "b"
   | "CallExpr" // glob(...), path(...), exec(...)
   | "ArrayLiteral" // ["-o", "bin"]
+  | "SpreadElement" // ...spread
   | "ObjectLiteral" // Used for named args: { force: true }
   | "Property" // Key-Value pair inside Object/Tool
   | "TemplateLiteral" // "${DIR}/file"
@@ -64,7 +67,22 @@ export interface TaskDeclaration extends Stmt {
 export interface ToolDeclaration extends Stmt {
   kind: "ToolDeclaration";
   symbol: string; // "python"
-  options: Property[]; // The platform mappings
+  options: ToolOption[]; // The platform mappings
+}
+
+type ToolOption = {
+  platform: string | null;
+  arch: string | null;
+  expr: Expr;
+};
+
+// platform-specific blocks
+export interface PlatformBlock extends Stmt {
+  kind: "PlatformBlock";
+  type: "plat" | "arch";
+  symbol: string;
+  body: Stmt[];
+  elseBody?: Stmt[];
 }
 
 // Logic (Linear Execution)
@@ -84,33 +102,32 @@ export interface BinaryExpr extends Expr {
   operator: string;
 }
 
+// arg: value
+export interface NamedArg extends Expr {
+  kind: "NamedArg";
+  name: string;
+  value: Expr;
+}
+
 // exec("cmd", { args: [...] })
 export interface CallExpr extends Expr {
   kind: "CallExpr";
-  caller: string; // The function name (e.g., "exec", "rm", "glob")
+  callee: Expr; // The function (e.g., "exec", "rm", "glob")
   args: Expr[]; // Positional arguments
 }
 
 // Data Structures
 
-// Used for Named Arguments in calls, or Tool mappings
-// e.g. force: true
-export interface Property extends Stmt {
-  kind: "Property";
-  key: string; // "force", "windows"
-  value: Expr; // true, "python.exe"
-}
-
-// { force: true, recursive: true }
-export interface ObjectLiteral extends Expr {
-  kind: "ObjectLiteral";
-  properties: Property[];
-}
-
 // [ "-o", ... ]
 export interface ArrayLiteral extends Expr {
   kind: "ArrayLiteral";
   elements: Expr[];
+}
+
+// ...spread
+export interface SpreadElement extends Expr {
+  kind: "SpreadElement";
+  argument: Expr;
 }
 
 // Primitives
