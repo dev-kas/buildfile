@@ -9,10 +9,10 @@
     "start": "node dist/index.js",
     "dev": "npm run build && npm start",
     "debug": "node --inspect-brk dist/index.js",
-    "cli": "node dist/cli.js"
+    "cli": "node dist/index.js"
   },
   "bin": {
-    "build": "dist/cli.js"
+    "build": "dist/index.js"
   },
   "keywords": [],
   "author": "dev-kas",
@@ -26,8 +26,12 @@
     "url": "https://github.com/dev-kas/buildfile"
   },
   "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "glob": "^13.0.6"
   },
   "devDependencies": {
+    "@types/glob": "^8.1.0",
     "@types/node": "^25.2.3",
     "typescript": "^5.9.3"
   }

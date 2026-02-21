@@ -220,23 +220,19 @@ export class Parser {
     // const myNum = 123
     // env PORT = 5500
     // const env PORT = 5500
-
     const prefix = this.advance();
 
     const constant = prefix.type === TokenType.Const;
     let isEnv = prefix.type === TokenType.Env;
-    let identifier = null;
 
-    if (constant) {
-      let next = this.advance();
-      // next could be either an identifier or env
-      if (next.type === TokenType.Env) isEnv = true;
-      else {
-        identifier = next;
-      }
-    } else {
-      identifier = this.expect(TokenType.Identifier).value;
+    // const env PORT = ...
+    if (constant && this.at().type === TokenType.Env) {
+      this.advance(); // consume 'env'
+      isEnv = true;
     }
+
+    const identifierToken = this.expect(TokenType.Identifier);
+    const identifier = identifierToken.value;
 
     this.expect(TokenType.Equals);
 
@@ -250,6 +246,7 @@ export class Parser {
       value,
     } as ast.VarDeclaration;
   }
+
   private parseExpr(): ast.Expr {
     return this.parseAssignmentExpr();
   }
