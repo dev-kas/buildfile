@@ -14,7 +14,19 @@
   "bin": {
     "build": "dist/index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "build",
+    "makefile",
+    "task-runner",
+    "automation",
+    "cross-platform",
+    "dsl",
+    "interpreter",
+    "workflow",
+    "cli",
+    "build-tool",
+    "dev-tools"
+  ],
   "author": "dev-kas",
   "license": "MIT",
   "type": "module",
