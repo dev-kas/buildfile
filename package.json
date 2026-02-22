@@ -1,15 +1,15 @@
 {
-  "name": "buildfile",
+  "name": "@dev-kas/buildfile",
   "version": "1.0.0",
-  "description": "a cross-platform makefile alternative",
+  "description": "A lightweight, cross-platform build automation tool with a simple DSL. The modern alternative to Makefiles.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "npm run build && npm start",
+    "dev": "tsc && node dist/index.js",
     "debug": "node --inspect-brk dist/index.js",
-    "cli": "node dist/index.js"
+    "prepublishOnly": "tsc"
   },
   "bin": {
     "build": "dist/index.js"
@@ -23,7 +23,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/dev-kas/buildfile"
+    "url": "git+https://github.com/dev-kas/buildfile.git"
   },
   "dependencies": {
     "chalk": "^5.6.2",
